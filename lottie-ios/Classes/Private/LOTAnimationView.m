@@ -185,10 +185,20 @@ static NSString * const kCompContainerAnimationKey = @"play";
   }
   
   _sceneModel = model;
-  _compContainer = [[LOTCompositionContainer alloc] initWithModel:nil inLayerGroup:nil withLayerGroup:_sceneModel.layerGroup withAssestGroup:_sceneModel.assetGroup];
-  [self.layer addSublayer:_compContainer];
-  [self _restoreState];
-  [self setNeedsLayout];
+    __weak typeof(&*self) self_weak_ = self;
+    dispatch_async(dispatch_get_global_queue(QOS_CLASS_DEFAULT, 0), ^{
+        _compContainer = [[LOTCompositionContainer alloc] initWithModel:nil inLayerGroup:nil withLayerGroup:_sceneModel.layerGroup withAssestGroup:_sceneModel.assetGroup];
+        
+        dispatch_async(dispatch_get_main_queue(), ^{
+            __strong typeof(&*self_weak_) self_strong_ = self_weak_;
+            if (self_strong_) {
+                [self_strong_.layer addSublayer:_compContainer];
+                [self_strong_ _restoreState];
+                [self_strong_ setNeedsLayout];
+            }
+        });
+    });
+
 }
 
 - (void)_restoreState {
